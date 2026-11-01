@@ -1,0 +1,13 @@
+data/
+models/
+models_aptos/
+*.pkl
+*.npy
+*.mat
+__pycache__/
+.ipynb_checkpoints/
+.venv/
+venv/
+bci_env/
+.env
+.DS_Store
