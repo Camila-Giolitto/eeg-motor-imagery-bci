@@ -1,0 +1,4 @@
+# Make GitHub show this repo as Python.
+# The LaTeX source of the report is documentation, not code.
+*.tex linguist-documentation
+informe/** linguist-documentation

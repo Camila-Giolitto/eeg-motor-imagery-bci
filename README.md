@@ -7,7 +7,9 @@ Final project of the **Diploma in Data Science and Artificial Intelligence Appli
 **Authors:** Mariel Anachuri, Clara Inés Chungara, Camila Giolitto
 **Mentor:** Bruno Zorzet
 
-📄 [Full report (PDF, in Spanish)](Informe.pdf)
+📄 **Report:** [English (PDF)](informe/english/eeg_motor_imagery_report_EN.pdf) · [Spanish, as submitted (PDF)](informe/Informe.pdf)
+
+💻 **Code:** [English version](bci_motor_imagery_EN.py) · [Spanish, as submitted](bci_motor_imagery.py)
 
 ---
 
@@ -82,8 +84,11 @@ The script uses the `PreprocessedDataset` class from the [mentorship repository]
 ```bash
 git clone https://github.com/bzorzet98/BCI-MENTORIA-UNC.git
 pip install -r requirements.txt
-BCI_REPO_PATH=/path/to/BCI-MENTORIA-UNC python bci_motor_imagery.py
+BCI_REPO_PATH=/path/to/BCI-MENTORIA-UNC python bci_motor_imagery_EN.py   # English version
+BCI_REPO_PATH=/path/to/BCI-MENTORIA-UNC python bci_motor_imagery.py      # Spanish version (as submitted)
 ```
+
+Both scripts run the same pipeline and give the same results. The English version has English names, comments, output files and plot labels.
 
 The script:
 
@@ -92,17 +97,23 @@ The script:
 3. Trains and evaluates the 4 models per subject.
 4. Applies the BCI illiteracy filter and compares all subjects against the eligible ones.
 
-Plots are saved to `results/figures/`, and per-subject models and metrics to `models/` and `models_aptos/` (eligible subjects).
+Plots are saved to `results/figures/`, and per-subject models and metrics to `models/` and `models_eligible/` (eligible subjects; `models_aptos/` in the Spanish version).
 
 ## Repository structure
 
 ```
-├── bci_motor_imagery.py   # full pipeline: features, EDA, training and evaluation
+eeg-motor-imagery-bci/
+├── README.md
 ├── requirements.txt
-├── Informe.pdf            # full report (Spanish)
-├── figures/
-│   └── model_comparison.png   # results chart shown in this README
-└── .gitignore
+├── bci_motor_imagery_EN.py    # full pipeline, English version
+├── bci_motor_imagery.py       # full pipeline, Spanish version (as submitted)
+├── informe/
+│   ├── Informe.pdf            # submitted report (Spanish)
+│   └── english/
+│       ├── eeg_motor_imagery_report_EN.pdf   # English version of the submitted report
+│       └── latex/main.tex                    # its LaTeX source
+└── figures/
+    └── model_comparison.png   # results chart shown in this README
 ```
 
-> The report and the code (comments, variable names and plot labels) are in Spanish, as this was original coursework.
+> The original coursework (submitted report and code) is in Spanish. The English report is a section-by-section translation of the submitted report, and `bci_motor_imagery_EN.py` is the same pipeline with English names, comments and plot labels.

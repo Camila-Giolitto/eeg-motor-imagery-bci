@@ -1,0 +1,280 @@
+% =====================================================================
+%  Diploma in Data Science and Artificial Intelligence Applied to
+%  Health Research - Mentorship Project 3
+%  EEG and motor imagery for the rehabilitation of stroke patients
+%
+%  English version of the submitted report (../../Informe.pdf),
+%  translated section by section.
+%
+%  Compile with pdfLaTeX (in Overleaf: Recompile).
+% =====================================================================
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{mathptmx}
+\usepackage[margin=2.54cm]{geometry}
+\usepackage{setspace}
+\usepackage{enumitem}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+\hypersetup{
+  pdftitle={EEG and Motor Imagery for the Rehabilitation of Stroke Patients},
+  pdfauthor={Mariel Anachuri, Clara Inés Chungara, Camila Giolitto}
+}
+
+\setstretch{1.15}
+\setlength{\parindent}{1.25cm}
+\setlength{\parskip}{0pt}
+\pagestyle{empty}
+
+% Section headings in the style of the original report
+\newcommand{\mainsection}[1]{%
+  \par\bigskip\noindent\textbf{#1}\par\nopagebreak}
+\newcommand{\subheading}[1]{%
+  \par\noindent\underline{#1}\par\nopagebreak}
+
+\setlist[itemize]{leftmargin=1.9cm, itemsep=0pt, topsep=0pt, parsep=0pt}
+\setlist[enumerate]{leftmargin=1.9cm, itemsep=0pt, topsep=0pt, parsep=0pt}
+
+\begin{document}
+
+% ---------------------------------------------------------------------
+%  Title block
+% ---------------------------------------------------------------------
+\begin{center}
+  {\textbf{EEG and Motor Imagery for the Rehabilitation of Stroke Patients}}\\[2pt]
+  {\textbf{Feature Engineering and Per-Subject Training on the Cho2017 Dataset}}\\[2pt]
+  Mariel Anachuri, Clara Inés Chungara, Camila Giolitto\\[10pt]
+  {\small\textbf{\textit{Diploma in Data Science and Artificial Intelligence Applied to Health Research}}}\\[2pt]
+  \textit{Mentorship Project 3 --- Mentor: Bruno Zorzet}
+\end{center}
+\vspace{-4pt}
+\noindent\rule{\textwidth}{0.4pt}
+
+% ---------------------------------------------------------------------
+%  Abstract
+% ---------------------------------------------------------------------
+\noindent\textbf{Abstract}\par
+In this work, an EEG signal processing and machine learning pipeline was developed to classify
+two motor imagery tasks (left hand and right hand) using the Cho2017 database. A feature
+engineering stage was carried out on the EEG signal, transforming the original recordings into
+a tabular dataset by means of frequency, temporal and spatial descriptors. Machine learning
+models were trained on this feature set under a \textit{within-subject} strategy, comparing
+Decision Tree, Random Forest, SVM and CSP+LDA as the baseline model. The evaluation made it
+possible to analyse the performance of the classifiers and the influence of the individual
+variability associated with the \textit{BCI illiteracy} phenomenon.
+
+\noindent\textbf{Keywords}\par
+EEG, MI-BCI, Feature Engineering, Machine Learning, BCI Illiteracy
+
+% ---------------------------------------------------------------------
+\mainsection{I. INTRODUCTION AND PROBLEM STATEMENT}
+% ---------------------------------------------------------------------
+Motor imagery brain-computer interfaces (\textit{Motor Imagery Brain-Computer Interfaces},
+MI-BCI) make it possible to decode a user's movement intention from electroencephalography
+(EEG) signals, which makes them a tool of interest for motor rehabilitation applications in
+patients who have had a cerebrovascular accident (\textit{stroke}).
+
+The deployment of these technologies faces two highly complex challenges:
+\begin{enumerate}
+  \item High inter-subject variability: EEG signals are inherently non-stationary and show
+        spectral and spatial signatures that are unique to each individual, which prevents the
+        efficient use of global classification models.
+  \item The BCI illiteracy phenomenon (or BCI inefficiency): it is statistically estimated that a
+        significant percentage of users ($\sim$20\% in the general literature) are unable to
+        produce brain responses that are sufficiently discriminative or voluntary to operate a
+        BCI system reliably.
+\end{enumerate}
+
+To address this problem, this work uses the Cho2017 database (52 subjects, $\sim$200 trials per
+subject, balanced across two classes), reducing the analysis space to only 3 critical channels:
+C3, Cz and C4, resampled to 128 Hz.
+
+The central objective of this project is to design, implement and critically evaluate a signal
+processing and multi-domain feature engineering pipeline, comparing classical tabular algorithms
+against the industry's spatial standard (CSP+LDA) under a realistic within-subject validation
+scheme that quantifies the impact of BCI illiteracy.
+
+% ---------------------------------------------------------------------
+\mainsection{II. METHODOLOGY}
+% ---------------------------------------------------------------------
+A within-subject approach was adopted to mitigate the inter-individual variability of the EEG.
+Starting from the preprocessed signals, represented as matrices of dimensions
+trials $\times$ 3 channels (C3, Cz, C4) $\times$ time, the following stages were carried out:
+
+\subheading{1. Extraction and construction of the feature set}
+The target variable (motor intention) was coded in binary form (0: left hand, 1: right hand).
+For each trial, 51 descriptors were generated, grouped into three families:
+\begin{itemize}[label=-, leftmargin=3.4cm]
+  \item Frequency: total power (RMS) and spectral power in 6 frequency bands (4--8, 8--12,
+        12--16, 16--20, 20--24 and 28--30 Hz), using Welch's method (Welch, 1967).
+  \item Temporal and complexity: kurtosis, skewness, Katz fractal dimension (Katz, 1988),
+        autoregressive coefficients (order 2) and permutation entropy (order 3).
+  \item Spatial and connectivity: cross-correlation, spectral coherence (MSC) and Phase Locking
+        Value (PLV), between C3--Cz, C4--Cz and C3--C4.
+\end{itemize}
+
+Consolidating the 52 subjects resulted in a dataset of 10,520 trials $\times$ 54 columns
+(51 features + 3 metadata columns: subject, coded label and its readable version).
+
+\subheading{2. Exploratory analysis and data leakage prevention}
+Boxplot + stripplot charts were generated per channel and per class to assess the overlap
+between distributions. It was determined that univariate visual inspection is not enough to
+anticipate the performance of a multivariate classifier; a valid conclusion requires formal
+hypothesis tests (Shapiro-Wilk, followed by a parametric or non-parametric test). No feature
+selection or transformation was applied before the split, to avoid data leakage.
+
+\subheading{3. Machine learning pipeline and evaluation}
+For each subject, the data were divided with a stratified 80/20 split, keeping the test set
+only for the final evaluation. Within the 80\% training set, a GridSearchCV object coupled to a
+stratified 5-fold cross-validation was applied. Feature scaling (StandardScaler), where
+applicable, was strictly encapsulated inside a Scikit-Learn Pipeline. This ensured that the
+normalisation parameters were estimated and applied using only the training data of each fold,
+preventing validation or test information from biasing the fit of the models.
+
+To close this workflow, the pipeline trained and optimised the four selected models
+independently for each of the 52 subjects. At the end of this stage, a performance matrix was
+consolidated containing, for each individual, four final accuracy metrics computed exclusively
+on their own held-out test sets.
+
+\subheading{4. Model Choice and Tuning Criteria}
+\begin{itemize}[label=-, leftmargin=1.3cm]
+  \item Model justification: the aim was to cover the full methodological spectrum, in order to
+        contrast the paradigm of handcrafted features against a method that learns its own spatial
+        projection of the data. Under this premise, the following were chosen: Decision Tree
+        (interpretable, low-complexity base model), Random Forest (ensemble robust to noise;
+        Breiman, 2001), SVM (maximum-margin model with non-linear capacity via kernel; Cortes \&
+        Vapnik, 1995) and CSP + LDA (industry standard in MI-BCI; Ramoser et al., 2000), the
+        latter fitted directly on the raw EEG signal of the 3 spatial channels and used as the
+        mandatory baseline.
+  \item Hyperparameter tuning: the configurations were optimised through the GridSearchCV grid,
+        evaluating critical parameters such as depth and pruning in trees (max\_depth,
+        min\_samples\_leaf), the number of estimators in Random Forest, the regularisation (C)
+        together with the kernel type in SVM, and the number of spatial components in CSP. The
+        final selection was based strictly on the mean accuracy obtained in cross-validation.
+  \item Class balancing: since the experimental design of the Cho2017 database provides naturally
+        balanced classes ($\sim$50/50 between both hands), it was decided to omit any resampling
+        technique.
+\end{itemize}
+
+\subheading{5. Configuration of the BCI Illiteracy Filter}
+To rigorously distinguish real predictive performance from statistical chance, given the finite
+size of the test sample, an exclusion filter was designed based on modelling the Binomial
+Distribution under the null hypothesis (H$_0$) of a purely random classifier.
+
+The theoretical decisions behind the filter considered a theoretical probability of success of
+$p = 0.5$ (due to the dichotomous class balance) and a significance level of $\alpha = 0.05$, to
+tolerate a maximum error margin of 5\%. Considering the size of the test set, the binomial
+distribution set a mathematical minimum of 0.650 accuracy to reject the chance hypothesis and
+consider a subject ``eligible''. This official cut-off criterion was applied by strictly
+evaluating the performance obtained with the CSP+LDA baseline model.
+
+% ---------------------------------------------------------------------
+\mainsection{III. ANALYSIS OF RESULTS AND DISCUSSION}
+% ---------------------------------------------------------------------
+\subheading{1. Global Comparison of Models (52 Subjects)}
+All four models exceeded, on average, the theoretical chance level of 0.5 (where 0.5 represents
+the probability of a purely random correct answer in binary classification). Support Vector
+Machines (SVM) and Random Forest led the overall predictive performance, with mean accuracy
+values of 0.677 and 0.665, followed by the Decision Tree (0.619) and CSP+LDA (0.591), which had
+the lowest performance in the study. The high dispersion observed in the standard deviations
+reflected the marked inter-subject variability, which supports the methodological decision to
+train the models under the within-subject approach.
+
+The low overall performance obtained by CSP + LDA (0.591) contrasts with the performance usually
+reported in the classical literature for this dataset. The explanation for this may lie in the
+hardware restriction implemented in this experimental design. The CSP algorithm is a spatial
+optimiser that requires high dimensionality (many electrodes, such as the 64 of the original
+Cho2017 montage) to compute robust cross-covariance matrices. By reducing the analysis space to
+only 3 channels (C3, Cz, C4), CSP loses practically all of its spatial degrees of freedom and
+becomes highly sensitive to noise.
+
+In contrast, the tabular models showed that when the hardware limits spatial resolution,
+multi-domain feature engineering manages to compensate for the loss of physical sensors, finding
+complex non-linear decision boundaries (such as those of SVM with an RBF kernel) that a purely
+spatial extractor does not detect on bare raw signals.
+
+\medskip
+\subheading{2. BCI Illiteracy Filter and Analysis of the Eligible Subpopulation}
+Taking the reference classifier (CSP+LDA) as the baseline, only 14 of the 52 subjects (26.9\%)
+qualified as eligible by exceeding the binomial cut-off threshold of 0.650, while 38 subjects
+(73.1\%) remained below the threshold, under the condition of BCI illiteracy.
+
+The statistical filter did not modify the data or require retraining the classifiers. Instead,
+the rows corresponding to the 14 subjects declared eligible were isolated within the
+consolidated results table, in order to evaluate the behaviour of the set of models under
+validated neurophysiological profiles. When the metrics were computed exclusively on this
+filtered subgroup, a drastic and systematic improvement of between 12 and 16 percentage points
+was observed in the mean accuracy of all architectures:
+\begin{itemize}[label=\textbullet, leftmargin=1.3cm]
+  \item Decision Tree: rose from 0.619 to 0.739 (+0.120).
+  \item CSP + LDA (Baseline): rose from 0.591 to 0.741 (+0.150).
+  \item Support Vector Machine (SVM): rose from 0.677 to 0.824 (+0.147).
+  \item Random Forest: rose from 0.665 to 0.821 (+0.156).
+\end{itemize}
+
+This quantitative jump statistically supports that the filter based on the binomial
+distribution effectively separates two populations with qualitatively different bioelectrical
+signatures. By removing the noise introduced by subjects unable to modulate their cortical
+rhythms, the performance of all algorithms increased notably, including CSP+LDA itself
+(+15 points), confirming that when the physiological signature exists, the spatial algorithm
+works even with hardware limitations.
+
+From a clinical perspective, SVM (0.824) and Random Forest (0.821) broke the critical barrier of
+0.80 mean accuracy. In biomedical engineering and in practice, an accuracy above 0.80 is
+established as the minimum operational threshold to consider a brain-computer interface
+functional and usable by a patient in post-stroke rehabilitation, allowing them to control
+neurofeedback software fluidly and without experiencing frustration from false commands.
+
+\medskip
+\subheading{3. Strengths, Limitations and Approaches Not Implemented}
+\begin{itemize}[label=\textbullet, leftmargin=1.3cm]
+  \item Strengths: the complete protection against data leakage, through the use of encapsulated
+        Scikit-Learn pipelines, guaranteed a statistically honest evaluation. In addition, the
+        superiority of SVM and Random Forest over CSP+LDA showed that when the hardware limits
+        spatial resolution (only 3 channels), multi-domain feature engineering (Welch power, Katz
+        complexity, PLV/MSC connectivity) is the most robust strategy to recover discriminative
+        patterns of motor intention.
+  \item Limitations: the sample size per subject ($\sim$200 trials) is limited for training
+        traditional models with dense grid searches, which introduces latent risks of
+        overfitting at the lower end, among difficult users. In addition, the PSD sub-bands were
+        fixed globally and uniformly, ignoring that the central frequency of the mu and beta
+        rhythms varies physiologically between individuals (and even more so after a stroke).
+  \item Approaches and Ideas Not Implemented: due to computational time constraints and agreed
+        changes of scope, the implementation of formal feature selection algorithms (SelectKBest
+        via ANOVA, RFE or Lasso L1 regularisation) to compress and optimise the 51 features was
+        left out of the final deliverable. Likewise, it was not possible to carry out the
+        non-linear graphical projection of the high-dimensional space with algorithms such as
+        t-SNE and UMAP, originally planned to visually map the three-dimensional geometric
+        separation between the eligible population and the population with BCI illiteracy.
+\end{itemize}
+
+% ---------------------------------------------------------------------
+\mainsection{IV. CONCLUSIONS AND FUTURE WORK}
+% ---------------------------------------------------------------------
+\medskip
+\subheading{1. General Conclusions}
+This work showed that the viability of a Brain-Computer Interface (MI-BCI) based on traditional
+machine learning depends on the individual neurophysiology of the user. Through experimentation
+with multiple algorithms (Decision Trees, Random Forest, SVM and the CSP+LDA spatial baseline),
+it was confirmed that the models are able to extract discriminative patterns of motor intention,
+but their overall effectiveness is conditioned by inter-subject variability.
+
+The integration of a strict statistical threshold transformed the analytical approach of the
+project: it showed that a predictive model must assess its ability to exceed a significance
+limit against chance. Although the findings revealed a high prevalence of ``BCI illiteracy'' in
+the general population under reduced hardware configurations, when the eligible subjects are
+statistically isolated, the classifiers substantially increase their predictive performance,
+reaching accuracies suitable for clinical settings.
+
+\medskip
+\subheading{2. Future Work and Advanced Approaches}
+To mitigate the limitations found and reduce the BCI illiteracy rate, the natural next step is
+to move towards deep learning architectures. The implementation of specialised convolutional
+neural networks such as EEGNet is proposed. These architectures make it possible to apply
+simultaneous spatial and temporal convolutions to discover complex representations directly from
+the native signal, with the potential to recover hidden patterns that escape traditional
+statistical descriptors.
+
+\end{document}
