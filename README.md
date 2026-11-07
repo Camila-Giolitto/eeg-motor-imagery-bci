@@ -77,6 +77,32 @@ Mean test accuracy:
 
 Explore deep learning architectures such as EEGNet, which learn spatial and temporal filters directly from the raw signal.
 
+## Follow-up analyses
+
+These analyses were added after the project was submitted. The original results above are unchanged.
+
+**Feature-family ablation** ([`follow_up/feature_family_ablation.py`](follow_up/feature_family_ablation.py))
+
+Which feature family drives performance? SVM and Random Forest are retrained per subject with one family at a time and compared with the full set of 51 features:
+
+| Condition | Features |
+|---|---|
+| All | the 51 features (same as the main pipeline) |
+| Frequency | total power and band power (21) |
+| Temporal | kurtosis, skewness, Katz fractal dimension, AR coefficients and permutation entropy (18) |
+| Spatial | cross-correlation, MSC and PLV (12) |
+
+The split, random seed, cross-validation and hyperparameter grids are the same as in the main pipeline. Every family is tested on the same trials, and the "All" condition reproduces the original SVM and Random Forest results.
+
+```bash
+python follow_up/feature_family_ablation.py FEATURES_CSV [RANKING_CSV]
+```
+
+- `FEATURES_CSV`: the feature table exported by the main script (`data/features_extraction/Cho2017/` inside `BCI_REPO_PATH`).
+- `RANKING_CSV` (optional): `models/bci_ranking.csv` (`models/ranking_bci.csv` in the Spanish version). With it, results are also reported separately for eligible subjects and for subjects near chance.
+
+Outputs are saved to `follow_up/results/`: per-subject results, a summary table and a boxplot.
+
 ## How to reproduce
 
 The script uses the `PreprocessedDataset` class from the [mentorship repository](https://github.com/bzorzet98/BCI-MENTORIA-UNC), which handles EEG loading and preprocessing.
@@ -112,6 +138,8 @@ eeg-motor-imagery-bci/
 │   └── english/
 │       ├── eeg_motor_imagery_report_EN.pdf   # English version of the submitted report
 │       └── latex/main.tex                    # its LaTeX source
+├── follow_up/
+│   └── feature_family_ablation.py   # follow-up analysis: performance per feature family
 └── figures/
     └── model_comparison.png   # results chart shown in this README
 ```
